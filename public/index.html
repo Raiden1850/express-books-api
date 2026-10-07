@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <main class="container">
+        <h1>Book Manager</h1>
+
+        <section class="form-section">
+            <h2>Add a Book</h2>
+
+            <form id="bookForm">
+                <input
+                    type="text"
+                    id="title"
+                    placeholder="Book title"
+                    required
+                >
+
+                <input
+                    type="text"
+                    id="author"
+                    placeholder="Author"
+                    required
+                >
+
+                <input
+                    type="number"
+                    id="year"
+                    placeholder="Year"
+                    required
+                >
+
+                <button type="submit">Add Book</button>
+            </form>
+        </section>
+
+        <p id="loading">Loading books...</p>
+
+        <p id="error" class="error"></p>
+
+        <section>
+            <h2>Books</h2>
+            <div id="bookList"></div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
