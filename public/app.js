@@ -1,9 +1,18 @@
 const bookForm = document.getElementById('bookForm');
+const editForm = document.getElementById('editForm');
 const bookList = document.getElementById('bookList');
 const loading = document.getElementById('loading');
 const errorMessage = document.getElementById('error');
 
-// Load all books
+const editSection = document.getElementById('editSection');
+const editId = document.getElementById('editId');
+const editTitle = document.getElementById('editTitle');
+const editAuthor = document.getElementById('editAuthor');
+const editYear = document.getElementById('editYear');
+const cancelEdit = document.getElementById('cancelEdit');
+
+
+// READ - Load all books
 async function loadBooks() {
     loading.style.display = 'block';
     errorMessage.textContent = '';
@@ -18,12 +27,15 @@ async function loadBooks() {
         const books = await response.json();
 
         displayBooks(books);
+
     } catch (error) {
         errorMessage.textContent = error.message;
+
     } finally {
         loading.style.display = 'none';
     }
 }
+
 
 // Display books
 function displayBooks(books) {
@@ -44,11 +56,11 @@ function displayBooks(books) {
             <p>Author: ${book.author}</p>
             <p>Year: ${book.year}</p>
 
-            <button onclick="editBook('${book._id}', '${book.title}', '${book.author}', ${book.year})">
+            <button class="edit-button" data-id="${book._id}">
                 Edit
             </button>
 
-            <button onclick="deleteBook('${book._id}')">
+            <button class="delete-button" data-id="${book._id}">
                 Delete
             </button>
         `;
@@ -57,9 +69,12 @@ function displayBooks(books) {
     });
 }
 
-// Create a book
+
+// CREATE - Add a book
 bookForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+
+    errorMessage.textContent = '';
 
     const title = document.getElementById('title').value;
     const author = document.getElementById('author').value;
@@ -68,9 +83,11 @@ bookForm.addEventListener('submit', async (event) => {
     try {
         const response = await fetch('/books', {
             method: 'POST',
+
             headers: {
                 'Content-Type': 'application/json'
             },
+
             body: JSON.stringify({
                 title,
                 author,
@@ -91,36 +108,42 @@ bookForm.addEventListener('submit', async (event) => {
     }
 });
 
-// Update a book
-async function editBook(id, oldTitle, oldAuthor, oldYear) {
-    const title = prompt('Enter the new title:', oldTitle);
 
-    if (title === null) {
-        return;
-    }
+// Open edit form
+function openEditForm(book) {
+    editId.value = book._id;
+    editTitle.value = book.title;
+    editAuthor.value = book.author;
+    editYear.value = book.year;
 
-    const author = prompt('Enter the new author:', oldAuthor);
+    editSection.hidden = false;
 
-    if (author === null) {
-        return;
-    }
+    editSection.scrollIntoView({
+        behavior: 'smooth'
+    });
+}
 
-    const year = prompt('Enter the new year:', oldYear);
 
-    if (year === null) {
-        return;
-    }
+// UPDATE - Save changes
+editForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    errorMessage.textContent = '';
+
+    const id = editId.value;
 
     try {
         const response = await fetch(`/books/${id}`, {
             method: 'PUT',
+
             headers: {
                 'Content-Type': 'application/json'
             },
+
             body: JSON.stringify({
-                title,
-                author,
-                year: Number(year)
+                title: editTitle.value,
+                author: editAuthor.value,
+                year: Number(editYear.value)
             })
         });
 
@@ -128,18 +151,32 @@ async function editBook(id, oldTitle, oldAuthor, oldYear) {
             throw new Error('Failed to update book');
         }
 
+        editForm.reset();
+
+        editSection.hidden = true;
+
         await loadBooks();
 
     } catch (error) {
         errorMessage.textContent = error.message;
     }
-}
+});
 
-// Delete a book
+
+// Cancel edit
+cancelEdit.addEventListener('click', () => {
+    editForm.reset();
+    editSection.hidden = true;
+});
+
+
+// DELETE - Remove a book
 async function deleteBook(id) {
     if (!confirm('Are you sure you want to delete this book?')) {
         return;
     }
+
+    errorMessage.textContent = '';
 
     try {
         const response = await fetch(`/books/${id}`, {
@@ -157,5 +194,37 @@ async function deleteBook(id) {
     }
 }
 
-// Load books when the page opens
+
+// Handle Edit and Delete buttons
+bookList.addEventListener('click', async (event) => {
+
+    if (event.target.classList.contains('edit-button')) {
+        const id = event.target.dataset.id;
+
+        try {
+            const response = await fetch(`/books/${id}`);
+
+            if (!response.ok) {
+                throw new Error('Failed to load book');
+            }
+
+            const book = await response.json();
+
+            openEditForm(book);
+
+        } catch (error) {
+            errorMessage.textContent = error.message;
+        }
+    }
+
+
+    if (event.target.classList.contains('delete-button')) {
+        const id = event.target.dataset.id;
+
+        await deleteBook(id);
+    }
+});
+
+
+// Load books when page opens
 loadBooks();

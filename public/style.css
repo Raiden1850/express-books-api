@@ -60,3 +60,7 @@ button {
 #loading {
     font-weight: bold;
 }
+
+#cancelEdit {
+    background: #ddd;
+}
