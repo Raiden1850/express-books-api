@@ -11,6 +11,7 @@
     <main class="container">
         <h1>Book Manager</h1>
 
+        <!-- Add Book -->
         <section class="form-section">
             <h2>Add a Book</h2>
 
@@ -40,10 +41,44 @@
             </form>
         </section>
 
+        <!-- Edit Book -->
+        <section class="form-section" id="editSection" hidden>
+            <h2>Edit Book</h2>
+
+            <form id="editForm">
+                <input type="hidden" id="editId">
+
+                <input
+                    type="text"
+                    id="editTitle"
+                    placeholder="Book title"
+                    required
+                >
+
+                <input
+                    type="text"
+                    id="editAuthor"
+                    placeholder="Author"
+                    required
+                >
+
+                <input
+                    type="number"
+                    id="editYear"
+                    placeholder="Year"
+                    required
+                >
+
+                <button type="submit">Save Changes</button>
+                <button type="button" id="cancelEdit">Cancel</button>
+            </form>
+        </section>
+
         <p id="loading">Loading books...</p>
 
         <p id="error" class="error"></p>
 
+        <!-- Books -->
         <section>
             <h2>Books</h2>
             <div id="bookList"></div>
