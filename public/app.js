@@ -1,4 +1,16 @@
 
+let authToken = null;
+let currentUsername = null;
+
+const registerForm = document.getElementById('registerForm');
+const loginForm = document.getElementById('loginForm');
+const authMessage = document.getElementById('authMessage');
+const authSection = document.getElementById('authSection');
+const accountSection = document.getElementById('accountSection');
+const bookSection = document.getElementById('bookSection');
+const welcomeMessage = document.getElementById('welcomeMessage');
+const logoutButton = document.getElementById('logoutButton');
+
 const bookForm = document.getElementById('bookForm');
 const editForm = document.getElementById('editForm');
 const bookList = document.getElementById('bookList');
@@ -23,7 +35,60 @@ function clearError() {
     errorMessage.textContent = '';
 }
 
-// Read the API's specific error message when available.
+function showAuthMessage(message) {
+    authMessage.textContent = message;
+}
+
+function setLoggedIn(username) {
+    currentUsername = username;
+    authSection.hidden = true;
+    accountSection.hidden = false;
+    bookSection.hidden = false;
+    welcomeMessage.textContent = `Logged in as ${username}`;
+    showAuthMessage('');
+    clearError();
+    loadBooks();
+}
+
+function logout() {
+    authToken = null;
+    currentUsername = null;
+
+    authSection.hidden = false;
+    accountSection.hidden = true;
+    bookSection.hidden = true;
+
+    bookList.replaceChildren();
+    bookForm.reset();
+    editForm.reset();
+    editSection.hidden = true;
+
+    clearError();
+    showAuthMessage('You have been logged out.');
+}
+
+// Attach the JWT to protected API requests.
+async function apiFetch(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+    
+    if (authToken) {
+        headers.set('Authorization', `Bearer ${authToken}`);
+    }
+
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        logout();
+        showAuthMessage('Your login has expired or is invalid. Please log in again.');
+    }
+
+    return response;
+}
+
+// Read the API's error message when available.
 async function getErrorMessage(response, fallback) {
     try {
         const data = await response.json();
@@ -42,14 +107,82 @@ async function getErrorMessage(response, fallback) {
     return fallback;
 }
 
+// REGISTER
+registerForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    showAuthMessage('Creating account...');
+
+    const username = document.getElementById('registerUsername').value;
+    const password = document.getElementById('registerPassword').value;
+
+    try {
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                await getErrorMessage(response, 'Registration failed.')
+            );
+        }
+
+        registerForm.reset();
+        showAuthMessage('Account created. You can now log in.');
+    } catch (error) {
+        showAuthMessage(error.message);
+    }
+});
+
+// LOGIN
+loginForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    showAuthMessage('Logging in...');
+
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                await getErrorMessage(response, 'Login failed.')
+            );
+        }
+
+        const data = await response.json();
+
+        if (!data.token) {
+            throw new Error('The server did not return an authentication token.');
+        }
+
+        authToken = data.token;
+        loginForm.reset();
+        setLoggedIn(username);
+    } catch (error) {
+        showAuthMessage(error.message);
+    }
+});
+
+// LOGOUT
+logoutButton.addEventListener('click', logout);
+
 // READ - Load all books
 async function loadBooks() {
+    if (!authToken) return;
+
+    loading.hidden = false;
     loading.textContent = 'Loading books...';
-    loading.style.display = 'block';
     clearError();
 
     try {
-        const response = await fetch('/books');
+        const response = await apiFetch('/books');
 
         if (!response.ok) {
             throw new Error(
@@ -62,7 +195,7 @@ async function loadBooks() {
     } catch (error) {
         showError(`Could not load books: ${error.message}`);
     } finally {
-        loading.style.display = 'none';
+        loading.hidden = true;
     }
 }
 
@@ -116,7 +249,7 @@ bookForm.addEventListener('submit', async event => {
     addButton.textContent = 'Adding...';
 
     try {
-        const response = await fetch('/books', {
+        const response = await apiFetch('/books', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -162,7 +295,7 @@ editForm.addEventListener('submit', async event => {
     saveButton.textContent = 'Saving...';
 
     try {
-        const response = await fetch(`/books/${editId.value}`, {
+        const response = await apiFetch(`/books/${editId.value}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -207,7 +340,7 @@ async function deleteBook(id, button) {
     button.textContent = 'Deleting...';
 
     try {
-        const response = await fetch(`/books/${id}`, {
+        const response = await apiFetch(`/books/${id}`, {
             method: 'DELETE'
         });
 
@@ -239,7 +372,7 @@ bookList.addEventListener('click', async event => {
         button.textContent = 'Loading...';
 
         try {
-            const response = await fetch(`/books/${id}`);
+            const response = await apiFetch(`/books/${id}`);
 
             if (!response.ok) {
                 throw new Error(
@@ -262,5 +395,5 @@ bookList.addEventListener('click', async event => {
     }
 });
 
-// Load books when page opens
-loadBooks();
+// Start with authentication required.
+logout();

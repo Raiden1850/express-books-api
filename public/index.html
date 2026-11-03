@@ -1,88 +1,109 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Manager</title>
+    <title>Secure Book Manager</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <main class="container">
         <h1>Book Manager</h1>
 
-        <!-- Add Book -->
-        <section class="form-section">
-            <h2>Add a Book</h2>
+        <!-- Authentication -->
+        <section class="form-section" id="authSection">
+            <h2>Account Access</h2>
 
-            <form id="bookForm">
+            <form id="registerForm">
+                <h3>Create Account</h3>
                 <input
                     type="text"
-                    id="title"
-                    placeholder="Book title"
+                    id="registerUsername"
+                    placeholder="Username"
+                    minlength="3"
+                    maxlength="30"
+                    autocomplete="username"
                     required
                 >
-
                 <input
-                    type="text"
-                    id="author"
-                    placeholder="Author"
+                    type="password"
+                    id="registerPassword"
+                    placeholder="Password (at least 8 characters)"
+                    minlength="8"
+                    maxlength="128"
+                    autocomplete="new-password"
                     required
                 >
-
-                <input
-                    type="number"
-                    id="year"
-                    placeholder="Year"
-                    required
-                >
-
-                <button type="submit">Add Book</button>
+                <button type="submit">Register</button>
             </form>
-        </section>
 
-        <!-- Edit Book -->
-        <section class="form-section" id="editSection" hidden>
-            <h2>Edit Book</h2>
+            <hr>
 
-            <form id="editForm">
-                <input type="hidden" id="editId">
-
+            <form id="loginForm">
+                <h3>Log In</h3>
                 <input
                     type="text"
-                    id="editTitle"
-                    placeholder="Book title"
+                    id="loginUsername"
+                    placeholder="Username"
+                    maxlength="30"
+                    autocomplete="username"
                     required
                 >
-
                 <input
-                    type="text"
-                    id="editAuthor"
-                    placeholder="Author"
+                    type="password"
+                    id="loginPassword"
+                    placeholder="Password"
+                    maxlength="128"
+                    autocomplete="current-password"
                     required
                 >
-
-                <input
-                    type="number"
-                    id="editYear"
-                    placeholder="Year"
-                    required
-                >
-
-                <button type="submit">Save Changes</button>
-                <button type="button" id="cancelEdit">Cancel</button>
+                <button type="submit">Log In</button>
             </form>
+
+            <p id="authMessage" role="status"></p>
         </section>
 
-        <p id="loading">Loading books...</p>
-
-        <p id="error" class="error"></p>
-
-        <!-- Books -->
-        <section>
-            <h2>Books</h2>
-            <div id="bookList"></div>
+        <!-- Logged-in account controls -->
+        <section id="accountSection" hidden>
+            <p id="welcomeMessage"></p>
+            <button type="button" id="logoutButton">Log Out</button>
         </section>
+
+        <!-- Book management -->
+        <div id="bookSection" hidden>
+            <section class="form-section">
+                <h2>Add a Book</h2>
+
+                <form id="bookForm">
+                    <input type="text" id="title" placeholder="Book title" required>
+                    <input type="text" id="author" placeholder="Author" required>
+                    <input type="number" id="year" placeholder="Year" required>
+                    <button type="submit">Add Book</button>
+                </form>
+            </section>
+
+            <section class="form-section" id="editSection" hidden>
+                <h2>Edit Book</h2>
+
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <input type="text" id="editTitle" placeholder="Book title" required>
+                    <input type="text" id="editAuthor" placeholder="Author" required>
+                    <input type="number" id="editYear" placeholder="Year" required>
+                    <button type="submit">Save Changes</button>
+                    <button type="button" id="cancelEdit">Cancel</button>
+                </form>
+            </section>
+
+            <p id="loading" hidden>Loading books...</p>
+            <p id="error" class="error" role="alert"></p>
+
+            <section>
+                <h2>Books</h2>
+                <div id="bookList"></div>
+            </section>
+        </div>
     </main>
 
     <script src="app.js"></script>

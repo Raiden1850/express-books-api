@@ -1,15 +1,36 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const Book = require('./models/Book');
+const authenticateToken = require('./middleware/auth');
+const authRoutes = require('./routes/auth');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+// Security configuration
+app.disable('x-powered-by');
+app.use(helmet());
+app.use(express.json({ limit: '10kb' }));
 app.use(express.static('public'));
+
+// Rate limit login and registration attempts
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: {
+        error: 'Too many authentication attempts. Please try again later.'
+    }
+});
+
+app.use('/auth', authLimiter, authRoutes);
 
 // Validate request data before saving
 function validateBook(data) {
@@ -49,19 +70,23 @@ function validId(id) {
     return mongoose.isValidObjectId(id);
 }
 
-// Return useful validation errors
+// Return safe error messages to clients
 function handleError(res, error, fallback) {
+    console.error(fallback, error);
+
     if (error.name === 'ValidationError' || error.name === 'CastError') {
         return res.status(400).json({
-            error: error.message
+            error: 'Invalid book data.'
         });
     }
 
-    console.error(fallback, error);
     return res.status(500).json({
         error: fallback
     });
 }
+
+// Protect every Books API endpoint
+app.use('/books', authenticateToken);
 
 // GET all books
 app.get('/books', async (req, res) => {
@@ -176,6 +201,11 @@ app.delete('/books/:id', async (req, res) => {
 async function startServer() {
     if (!process.env.MONGODB_URI) {
         console.error('MONGODB_URI is missing from the .env file.');
+        process.exit(1);
+    }
+
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+        console.error('JWT_SECRET is missing or too short.');
         process.exit(1);
     }
 
